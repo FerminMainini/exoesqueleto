@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exoesqueleto Neumático — Tren Inferior</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#03080f;
+  --blueprint:#0a1628;
+  --grid:#0d2040;
+  --line:#1a4a7a;
+  --accent:#4dc8ff;
+  --accent2:#3dffa0;
+  --accent3:#ffb84d;
+  --danger:#ff5050;
+  --text:#b8d8f0;
+  --dim:#3a6080;
+  --panel:#050d1a;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Rajdhani',sans-serif;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+/* Blueprint grid background */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(26,74,122,0.18) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(26,74,122,0.18) 1px,transparent 1px),
+    linear-gradient(rgba(26,74,122,0.07) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(26,74,122,0.07) 1px,transparent 1px);
+  background-size:80px 80px, 80px 80px, 16px 16px, 16px 16px;
+  pointer-events:none;
+  z-index:0;
+}
+
+header{
+  position:relative;z-index:10;
+  padding:14px 30px 12px;
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(3,8,15,0.9);
+  flex-shrink:0;
+}
+.logo{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;color:var(--accent);
+  letter-spacing:3px;
+  text-transform:uppercase;
+}
+h1{
+  font-family:'Share Tech Mono',monospace;
+  font-size:17px;font-weight:400;
+  color:#fff;letter-spacing:1px;
+}
+h1 span{color:var(--accent)}
+.header-meta{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:var(--dim);
+  text-align:right;line-height:1.7;
+}
+
+.main{
+  position:relative;z-index:1;
+  flex:1;
+  display:flex;
+  overflow:hidden;
+}
+
+/* ===== SVG VIEWPORT ===== */
+.viewport{
+  flex:1;
+  position:relative;
+  overflow:hidden;
+  cursor:default;
+}
+
+.svg-stage{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+#main-svg{
+  width:100%;
+  height:100%;
+  max-width:560px;
+  max-height:calc(100vh - 100px);
+  transition:transform 0.7s cubic-bezier(0.4,0,0.2,1), opacity 0.4s;
+}
+
+/* Clickable hotspots */
+.hotspot{
+  cursor:pointer;
+  transition:opacity 0.2s;
+}
+.hotspot:hover .hs-ring{opacity:1!important}
+.hotspot:hover .hs-label{opacity:1!important}
+
+/* ===== DETAIL VIEW ===== */
+#detail-view{
+  position:absolute;inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.5s;
+}
+#detail-view.active{
+  opacity:1;
+  pointer-events:all;
+}
+#detail-svg-wrap{
+  position:relative;
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* ===== INFO PANEL ===== */
+.panel{
+  width:340px;
+  flex-shrink:0;
+  background:var(--panel);
+  border-left:1px solid var(--line);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.panel-title-bar{
+  padding:14px 18px 12px;
+  border-bottom:1px solid var(--line);
+  background:rgba(0,0,0,0.3);
+  flex-shrink:0;
+}
+.panel-title-bar .sys-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--dim);letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:5px;
+}
+.panel-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:14px;color:#fff;
+  line-height:1.3;
+}
+.panel-tag{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;margin-top:4px;
+  letter-spacing:1px;
+}
+
+.panel-body{
+  flex:1;
+  overflow-y:auto;
+  padding:16px 18px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--line) transparent;
+}
+
+.panel-default{
+  height:100%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;gap:14px;
+}
+.panel-default .big-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;color:var(--dim);
+  line-height:2;letter-spacing:1px;
+}
+.arrow-hint{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:var(--accent);
+  opacity:0.5;
+  animation:blink 2s infinite;
+}
+@keyframes blink{0%,100%{opacity:0.5}50%{opacity:1}}
+
+.info-block{display:none}
+.info-block.active{display:block;animation:fadeup 0.3s ease}
+@keyframes fadeup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.desc{
+  font-size:15px;line-height:1.7;
+  color:var(--text);margin-bottom:16px;
+}
+.desc strong{color:var(--accent)}
+.desc em{color:var(--accent3);font-style:normal}
+
+.specs{
+  border:1px solid var(--line);
+  border-radius:6px;
+  overflow:hidden;
+  margin-bottom:14px;
+}
+.spec-row{
+  display:flex;
+  border-bottom:1px solid var(--line);
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;
+}
+.spec-row:last-child{border-bottom:none}
+.spec-k{
+  padding:7px 10px;
+  color:var(--dim);
+  width:52%;
+  border-right:1px solid var(--line);
+  background:rgba(0,0,0,0.2);
+}
+.spec-v{
+  padding:7px 10px;
+  color:#fff;
+  width:48%;
+}
+
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  border:1px solid;
+  border-radius:20px;
+  padding:3px 10px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:1px;
+  margin-bottom:12px;
+}
+.badge::before{
+  content:'●';font-size:7px;
+  animation:blink 1s infinite;
+}
+.badge.pneum{color:var(--accent);border-color:rgba(77,200,255,0.3)}
+.badge.sensor{color:var(--accent3);border-color:rgba(255,184,77,0.3)}
+.badge.danger{color:var(--danger);border-color:rgba(255,80,80,0.3)}
+.badge.struct{color:var(--accent2);border-color:rgba(61,255,160,0.3)}
+
+.warn-box{
+  background:rgba(255,80,80,0.07);
+  border:1px solid rgba(255,80,80,0.25);
+  border-radius:6px;
+  padding:10px 12px;
+  font-size:13px;color:#ff8080;
+  margin-top:10px;
+  line-height:1.6;
+}
+.info-box{
+  background:rgba(77,200,255,0.07);
+  border:1px solid rgba(77,200,255,0.2);
+  border-radius:6px;
+  padding:10px 12px;
+  font-size:13px;color:var(--accent);
+  margin-top:10px;
+  line-height:1.6;
+}
+
+.algo-step{
+  display:flex;gap:10px;
+  padding:8px 10px;
+  border-left:2px solid var(--accent);
+  margin-bottom:6px;
+  background:rgba(77,200,255,0.04);
+  border-radius:0 4px 4px 0;
+  font-size:13px;line-height:1.5;
+}
+.step-num{
+  font-family:'Share Tech Mono',monospace;
+  color:var(--accent);font-size:11px;flex-shrink:0;
+  padding-top:1px;
+}
+
+/* Back button */
+#back-btn{
+  display:none;
+  margin:14px 18px 0;
+  padding:8px 14px;
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--dim);
+  border-radius:4px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:1px;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-transform:uppercase;
+  flex-shrink:0;
+  align-items:center;gap:6px;
+}
+#back-btn:hover{border-color:var(--accent);color:var(--accent)}
+#back-btn.show{display:flex}
+
+/* Legend */
+.legend{
+  flex-shrink:0;
+  padding:8px 18px;
+  border-top:1px solid var(--line);
+  display:flex;gap:14px;flex-wrap:wrap;
+  background:rgba(0,0,0,0.3);
+}
+.leg{
+  display:flex;align-items:center;gap:5px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--dim);
+  letter-spacing:0.5px;
+}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* SVG shared styles */
+.struct{fill:#0a1e35;stroke:#1a4a7a;stroke-width:1}
+.cyl{fill:#04233a;stroke:#4dc8ff;stroke-width:1.2}
+.joint{fill:#081828;stroke:#2a6aaa;stroke-width:1.5}
+.valve-body{fill:#061a10;stroke:#3dffa0;stroke-width:1}
+.sensor-fsr{fill:#2a0f05;stroke:#ff8040}
+.sensor-son{fill:#1a1500;stroke:#ffb84d}
+.sensor-imu{fill:#0f0825;stroke:#9050ff}
+.wire-p{fill:none;stroke:#4dc8ff;stroke-width:1.5;stroke-dasharray:4,2}
+.wire-g{fill:none;stroke:#3dffa0;stroke-width:1.5;stroke-dasharray:4,2}
+.wire-e{fill:none;stroke:#9050ff;stroke-width:1;stroke-dasharray:3,2}
+.hotspot-ring{fill:none;stroke-width:1.5;opacity:0.6}
+.hotspot-dot{stroke:none}
+
+/* Detail SVG arrows animation */
+@keyframes dash-flow{to{stroke-dashoffset:-20}}
+.flow-line{stroke-dasharray:6,3;animation:dash-flow 1.2s linear infinite}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">// Exposición Neumática //</div>
+    <h1>Exoesqueleto <span>Neumático</span> — Tren Inferior</h1>
+  </div>
+  <div class="header-meta">
+    REV.2 — SISTEMA DE REHABILITACIÓN<br>
+    PARÁLISIS DE MIEMBROS INFERIORES
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ===== SVG VIEWPORT ===== -->
+  <div class="viewport">
+    <div class="svg-stage">
+
+      <!-- OVERVIEW SVG -->
+      <svg id="main-svg" viewBox="0 0 420 720" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- ===== PELVIS BELT ===== -->
+        <g class="hotspot" onclick="zoom('pelvis')" id="hs-pelvis">
+          <rect x="80" y="60" width="260" height="34" rx="6" class="struct"/>
+          <rect x="88" y="65" width="244" height="8" rx="3" fill="rgba(77,200,255,0.06)"/>
+          <rect x="88" y="77" width="244" height="8" rx="3" fill="rgba(77,200,255,0.04)"/>
+          <circle cx="100" cy="77" r="4" fill="#081828" stroke="#1a4a7a" stroke-width="1"/>
+          <circle cx="210" cy="77" r="4" fill="#081828" stroke="#1a4a7a" stroke-width="1"/>
+          <circle cx="320" cy="77" r="4" fill="#081828" stroke="#1a4a7a" stroke-width="1"/>
+          <!-- hotspot indicator -->
+          <circle cx="210" cy="77" r="22" class="hotspot-ring" stroke="#4dc8ff" opacity="0.25"/>
+          <circle cx="210" cy="77" r="5" class="hotspot-dot" fill="#4dc8ff" opacity="0.5"/>
+          <text x="210" y="55" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="rgba(77,200,255,0.5)">CINTURÓN PÉLVICO ↗</text>
+        </g>
+
+        <!-- ===== TANK ===== -->
+        <g class="hotspot" onclick="zoom('tanque')" id="hs-tanque">
+          <rect x="20" y="62" width="44" height="82" rx="8" fill="#0a0a22" stroke="#3a3a8a" stroke-width="1.2"/>
+          <rect x="27" y="70" width="30" height="66" rx="4" fill="rgba(80,80,200,0.07)"/>
+          <line x1="24" y1="88" x2="61" y2="88" stroke="rgba(100,100,220,0.3)" stroke-width="1"/>
+          <line x1="24" y1="104" x2="61" y2="104" stroke="rgba(100,100,220,0.2)" stroke-width="1"/>
+          <line x1="24" y1="120" x2="61" y2="120" stroke="rgba(100,100,220,0.15)" stroke-width="1"/>
+          <rect x="29" y="55" width="24" height="10" rx="3" fill="#14143a" stroke="#4a4aaa" stroke-width="1"/>
+          <line x1="64" y1="103" x2="80" y2="103" stroke="#4dc8ff" stroke-width="1.8" stroke-dasharray="3,2"/>
+          <circle cx="42" cy="103" r="18" class="hotspot-ring" stroke="#4dc8ff" opacity="0.2"/>
+          <circle cx="42" cy="103" r="4" class="hotspot-dot" fill="#8080ff" opacity="0.6"/>
+          <text x="42" y="152" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7.5" fill="rgba(120,120,255,0.6)">TANQUE ↗</text>
+        </g>
+
+        <!-- ===== PRESSURE REGULATOR ===== -->
+        <g class="hotspot" onclick="zoom('regulador')" id="hs-reg">
+          <circle cx="113" cy="103" r="16" fill="#061828" stroke="#2a7aaa" stroke-width="1.2"/>
+          <circle cx="113" cy="103" r="10" fill="#081a2a" stroke="#3a8aba" stroke-width="1"/>
+          <circle cx="113" cy="103" r="4" fill="#103040"/>
+          <line x1="113" y1="93" x2="113" y2="97" stroke="#3a8aba" stroke-width="1"/>
+          <line x1="103" y1="103" x2="107" y2="103" stroke="#3a8aba" stroke-width="1"/>
+          <line x1="113" y1="103" x2="110" y2="97" stroke="#ffcc00" stroke-width="1.5"/>
+          <line x1="64" y1="103" x2="97" y2="103" stroke="#4dc8ff" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <line x1="129" y1="103" x2="145" y2="103" stroke="#4dc8ff" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <circle cx="113" cy="103" r="20" class="hotspot-ring" stroke="#4dc8ff" opacity="0.2"/>
+          <circle cx="113" cy="103" r="3.5" class="hotspot-dot" fill="#4dc8ff" opacity="0.5"/>
+          <text x="113" y="126" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="rgba(77,200,255,0.5)">REG. ↗</text>
+        </g>
+
+        <!-- ===== ELECTROVALVES ===== -->
+        <g class="hotspot" onclick="zoom('valvulas')" id="hs-valv">
+          <rect x="145" y="92" width="130" height="25" rx="4" fill="#04120a" stroke="#2a7a2a" stroke-width="1"/>
+          <rect x="150" y="92" width="20" height="38" rx="3" class="valve-body"/>
+          <rect x="178" y="92" width="20" height="38" rx="3" class="valve-body"/>
+          <rect x="206" y="92" width="20" height="38" rx="3" class="valve-body"/>
+          <rect x="234" y="92" width="20" height="38" rx="3" class="valve-body"/>
+          <rect x="152" y="95" width="16" height="9" rx="2" fill="#0a3a14" stroke="rgba(61,255,160,0.3)" stroke-width="0.5"/>
+          <rect x="180" y="95" width="16" height="9" rx="2" fill="#0a3a14" stroke="rgba(61,255,160,0.3)" stroke-width="0.5"/>
+          <rect x="208" y="95" width="16" height="9" rx="2" fill="#0a3a14" stroke="rgba(61,255,160,0.3)" stroke-width="0.5"/>
+          <rect x="236" y="95" width="16" height="9" rx="2" fill="#0a3a14" stroke="rgba(61,255,160,0.3)" stroke-width="0.5"/>
+          <circle cx="160" cy="126" r="3" fill="#3dffa0" opacity="0.7"/>
+          <circle cx="188" cy="126" r="3" fill="#3dffa0" opacity="0.5"/>
+          <circle cx="216" cy="126" r="3" fill="#3dffa0" opacity="0.7"/>
+          <circle cx="244" cy="126" r="3" fill="#3dffa0" opacity="0.5"/>
+          <!-- hoses going down -->
+          <line x1="160" y1="129" x2="152" y2="168" stroke="#3dffa0" stroke-width="1.5" stroke-dasharray="4,2" opacity="0.6"/>
+          <line x1="188" y1="129" x2="182" y2="168" stroke="#3dffa0" stroke-width="1.5" stroke-dasharray="4,2" opacity="0.6"/>
+          <line x1="216" y1="129" x2="248" y2="168" stroke="#3dffa0" stroke-width="1.5" stroke-dasharray="4,2" opacity="0.6"/>
+          <line x1="244" y1="129" x2="276" y2="168" stroke="#3dffa0" stroke-width="1.5" stroke-dasharray="4,2" opacity="0.6"/>
+          <circle cx="210" cy="105" r="30" class="hotspot-ring" stroke="#3dffa0" opacity="0.2"/>
+          <circle cx="210" cy="105" r="4" class="hotspot-dot" fill="#3dffa0" opacity="0.5"/>
+          <text x="210" y="88" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7.5" fill="rgba(61,255,160,0.6)">ELECTROVÁLVULAS ↗</text>
+        </g>
+
+        <!-- ===== CONTROLLER ===== -->
+        <g class="hotspot" onclick="zoom('controlador')" id="hs-ctrl">
+          <rect x="310" y="57" width="60" height="44" rx="4" fill="#060f06" stroke="#1a3a1a" stroke-width="1.2"/>
+          <rect x="315" y="61" width="50" height="36" rx="3" fill="#080f08"/>
+          <line x1="317" y1="68" x2="362" y2="68" stroke="#163016" stroke-width="1"/>
+          <line x1="317" y1="76" x2="362" y2="76" stroke="#163016" stroke-width="1"/>
+          <line x1="317" y1="84" x2="362" y2="84" stroke="#163016" stroke-width="1"/>
+          <line x1="338" y1="61" x2="338" y2="97" stroke="#163016" stroke-width="1"/>
+          <rect x="332" y="69" width="18" height="13" rx="2" fill="#143a14" stroke="#3dffa0" stroke-width="0.5"/>
+          <text x="341" y="77" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="5.5" fill="#3dffa0" dominant-baseline="middle">MCU</text>
+          <circle cx="366" cy="64" r="3.5" fill="#3dffa0" opacity="0.8"/>
+          <!-- wire to valves -->
+          <line x1="310" y1="79" x2="275" y2="100" stroke="#3dffa0" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+          <circle cx="340" cy="79" r="22" class="hotspot-ring" stroke="#3dffa0" opacity="0.2"/>
+          <circle cx="340" cy="79" r="4" class="hotspot-dot" fill="#3dffa0" opacity="0.5"/>
+          <text x="340" y="108" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7.5" fill="rgba(61,255,160,0.5)">ARDUINO ↗</text>
+        </g>
+
+        <!-- ===== IMU ===== -->
+        <g class="hotspot" onclick="zoom('imu')" id="hs-imu">
+          <rect x="175" y="48" width="70" height="19" rx="3" class="sensor-imu" stroke-width="1"/>
+          <rect x="184" y="51" width="16" height="10" rx="2" fill="#1a0840" stroke="#9050ff" stroke-width="0.5"/>
+          <text x="192" y="57.5" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="5" fill="#9050ff" dominant-baseline="middle">IMU</text>
+          <circle cx="208" cy="56" r="2.5" fill="#9050ff" opacity="0.6"/>
+          <circle cx="215" cy="56" r="2.5" fill="#ff50ff" opacity="0.5"/>
+          <circle cx="222" cy="56" r="2.5" fill="#50ffff" opacity="0.5"/>
+          <circle cx="210" cy="57" r="16" class="hotspot-ring" stroke="#9050ff" opacity="0.3"/>
+          <circle cx="210" cy="57" r="3" class="hotspot-dot" fill="#9050ff" opacity="0.6"/>
+          <text x="210" y="43" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="rgba(144,80,255,0.6)">IMU ↗</text>
+        </g>
+
+        <!-- ===== PANIC BUTTON ===== -->
+        <g class="hotspot" onclick="zoom('panico')" id="hs-panic">
+          <circle cx="385" cy="130" r="17" fill="#1a0404" stroke="#8a1010" stroke-width="1.8"/>
+          <circle cx="385" cy="130" r="11" fill="#220606" stroke="#aa2020" stroke-width="1.2"/>
+          <circle cx="385" cy="130" r="6" fill="#cc1111" opacity="0.85"/>
+          <circle cx="385" cy="130" r="20" class="hotspot-ring" stroke="#ff5050" opacity="0.3"/>
+          <circle cx="385" cy="130" r="4" class="hotspot-dot" fill="#ff5050" opacity="0.6"/>
+          <text x="385" y="155" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="rgba(255,80,80,0.7)">PÁNICO ↗</text>
+          <line x1="385" y1="113" x2="380" y2="101" stroke="#8a1010" stroke-width="1" stroke-dasharray="2,2"/>
+        </g>
+
+        <!-- ===== LEFT THIGH STRUCTURE ===== -->
+        <rect x="118" y="94" width="22" height="120" rx="6" class="struct"/>
+
+        <!-- Left thigh cylinder -->
+        <g class="hotspot" onclick="zoom('cilindro')" id="hs-cyl-l">
+          <rect x="140" y="168" width="26" height="108" rx="5" class="cyl"/>
+          <rect x="146" y="176" width="14" height="94" rx="3" fill="rgba(77,200,255,0.06)"/>
+          <rect x="149" y="276" width="8" height="26" rx="2" fill="#0f3048" stroke="#2a6090" stroke-width="1"/>
+          <circle cx="147" cy="178" r="3" fill="#4dc8ff" opacity="0.8"/>
+          <circle cx="147" cy="264" r="3" fill="#4dc8ff" opacity="0.5"/>
+          <circle cx="153" cy="222" r="22" class="hotspot-ring" stroke="#4dc8ff" opacity="0.2"/>
+          <circle cx="153" cy="222" r="4" class="hotspot-dot" fill="#4dc8ff" opacity="0.5"/>
+          <text x="95" y="225" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="rgba(77,200,255,0.5)" transform="rotate(-90,95,225)">CIL. DOBLE EFECTO ↗</text>
+        </g>
+
+        <!-- ===== RIGHT THIGH STRUCTURE ===== -->
+        <rect x="280" y="94" width="22" height="120" rx="6" class="struct"/>
+
+        <!-- Right thigh cylinder -->
+        <g class="hotspot" onclick="zoom('cilindro')" id="hs-cyl-r">
+          <rect x="254" y="168" width="26" height="108" rx="5" class="cyl"/>
+          <rect x="260" y="176" width="14" height="94" rx="3" fill="rgba(77,200,255,0.06)"/>
+          <rect x="263" y="276" width="8" height="26" rx="2" fill="#0f3048" stroke="#2a6090" stroke-width="1"/>
+          <circle cx="269" cy="178" r="3" fill="#4dc8ff" opacity="0.8"/>
+          <circle cx="269" cy="264" r="3" fill="#4dc8ff" opacity="0.5"/>
+          <circle cx="267" cy="222" r="22" class="hotspot-ring" stroke="#4dc8ff" opacity="0.2"/>
+          <circle cx="267" cy="222" r="4" class="hotspot-dot" fill="#4dc8ff" opacity="0.5"/>
+        </g>
+
+        <!-- ===== KNEE JOINTS ===== -->
+        <g class="hotspot" onclick="zoom('rodilla')" id="hs-knee">
+          <circle cx="153" cy="308" r="19" class="joint"/>
+          <circle cx="153" cy="308" r="12" fill="#060e18" stroke="#3a7aaa" stroke-width="1.2"/>
+          <circle cx="153" cy="308" r="5" fill="#102030"/>
+          <circle cx="267" cy="308" r="19" class="joint"/>
+          <circle cx="267" cy="308" r="12" fill="#060e18" stroke="#3a7aaa" stroke-width="1.2"/>
+          <circle cx="267" cy="308" r="5" fill="#102030"/>
+          <circle cx="153" cy="308" r="24" class="hotspot-ring" stroke="#4dc8ff" opacity="0.18"/>
+          <circle cx="153" cy="308" r="4" class="hotspot-dot" fill="#4dc8ff" opacity="0.4"/>
+          <text x="100" y="311" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="7" fill="rgba(77,200,255,0.5)">RODILLAS ↗</text>
+          <line x1="102" y1="309" x2="130" y2="309" stroke="rgba(77,200,255,0.25)" stroke-width="1"/>
+        </g>
+
+        <!-- ===== SHIN STRUCTURE ===== -->
+        <rect x="118" y="325" width="22" height="130" rx="6" class="struct"/>
+        <rect x="280" y="325" width="22" height="130" rx="6" class="struct"/>
+
+        <!-- Left shin cylinder -->
+        <g class="hotspot" onclick="zoom('cilindro')" id="hs-cyl-sl">
+          <rect x="140" y="330" width="24" height="106" rx="5" class="cyl"/>
+          <rect x="146" y="337" width="12" height="93" rx="3" fill="rgba(77,200,255,0.05)"/>
+          <rect x="148" y="436" width="8" height="22" rx="2" fill="#0f3048" stroke="#2a6090" stroke-width="1"/>
+          <circle cx="147" cy="340" r="2.5" fill="#4dc8ff" opacity="0.8"/>
+          <circle cx="147" cy="427" r="2.5" fill="#4dc8ff" opacity="0.5"/>
+        </g>
+
+        <!-- Right shin cylinder -->
+        <g class="hotspot" onclick="zoom('cilindro')">
+          <rect x="256" y="330" width="24" height="106" rx="5" class="cyl"/>
+          <rect x="262" y="337" width="12" height="93" rx="3" fill="rgba(77,200,255,0.05)"/>
+          <rect x="264" y="436" width="8" height="22" rx="2" fill="#0f3048" stroke="#2a6090" stroke-width="1"/>
+          <circle cx="269" cy="340" r="2.5" fill="#4dc8ff" opacity="0.8"/>
+          <circle cx="269" cy="427" r="2.5" fill="#4dc8ff" opacity="0.5"/>
+        </g>
+
+        <!-- ===== ANKLE JOINTS ===== -->
+        <g class="hotspot" onclick="zoom('tobillo')" id="hs-ankle">
+          <circle cx="153" cy="472" r="16" class="joint"/>
+          <circle cx="153" cy="472" r="9" fill="#060e18" stroke="#3a7aaa" stroke-width="1"/>
+          <circle cx="153" cy="472" r="4" fill="#102030"/>
+          <circle cx="267" cy="472" r="16" class="joint"/>
+          <circle cx="267" cy="472" r="9" fill="#060e18" stroke="#3a7aaa" stroke-width="1"/>
+          <circle cx="267" cy="472" r="4" fill="#102030"/>
+          <circle cx="153" cy="472" r="20" class="hotspot-ring" stroke="#4dc8ff" opacity="0.18"/>
+          <circle cx="153" cy="472" r="3.5" class="hotspot-dot" fill="#4dc8ff" opacity="0.4"/>
+          <text x="100" y="475" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="7" fill="rgba(77,200,255,0.5)">TOBILLOS ↗</text>
+          <line x1="102" y1="473" x2="133" y2="473" stroke="rgba(77,200,255,0.25)" stroke-width="1"/>
+        </g>
+
+        <!-- ===== FOOT PLATES ===== -->
+        <g class="hotspot" onclick="zoom('pie')" id="hs-foot">
+          <rect x="100" y="487" width="90" height="22" rx="4" fill="#040c1a" stroke="#1a3a5c" stroke-width="1.2"/>
+          <rect x="230" y="487" width="90" height="22" rx="4" fill="#040c1a" stroke="#1a3a5c" stroke-width="1.2"/>
+          <!-- FSR sensors -->
+          <circle cx="112" cy="498" r="6" class="sensor-fsr" stroke-width="1" opacity="0.9"/>
+          <circle cx="182" cy="498" r="6" class="sensor-fsr" stroke-width="1" opacity="0.9"/>
+          <circle cx="242" cy="498" r="6" class="sensor-fsr" stroke-width="1" opacity="0.9"/>
+          <circle cx="312" cy="498" r="6" class="sensor-fsr" stroke-width="1" opacity="0.9"/>
+          <circle cx="210" cy="498" r="22" class="hotspot-ring" stroke="#ff8040" opacity="0.2"/>
+          <circle cx="210" cy="498" r="4" class="hotspot-dot" fill="#ff8040" opacity="0.5"/>
+          <text x="210" y="520" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7.5" fill="rgba(255,128,64,0.6)">PIE + SENSORES FSR ↗</text>
+        </g>
+
+        <!-- ===== ULTRASONIC SENSORS ===== -->
+        <g class="hotspot" onclick="zoom('sonar')" id="hs-sonar">
+          <rect x="85" y="370" width="26" height="16" rx="3" class="sensor-son" stroke-width="1"/>
+          <circle cx="93" cy="378" r="4" fill="#1a1500" stroke="#ffb84d" stroke-width="0.8"/>
+          <circle cx="104" cy="378" r="4" fill="#1a1500" stroke="#ffb84d" stroke-width="0.8"/>
+          <!-- sonar waves -->
+          <path d="M80 374 Q74 378 80 382" fill="none" stroke="#ffb84d" stroke-width="1" opacity="0.7"/>
+          <path d="M77 371 Q69 378 77 385" fill="none" stroke="#ffb84d" stroke-width="0.7" opacity="0.4"/>
+
+          <rect x="309" y="370" width="26" height="16" rx="3" class="sensor-son" stroke-width="1"/>
+          <circle cx="317" cy="378" r="4" fill="#1a1500" stroke="#ffb84d" stroke-width="0.8"/>
+          <circle cx="328" cy="378" r="4" fill="#1a1500" stroke="#ffb84d" stroke-width="0.8"/>
+          <path d="M340 374 Q346 378 340 382" fill="none" stroke="#ffb84d" stroke-width="1" opacity="0.7"/>
+          <path d="M343 371 Q351 378 343 385" fill="none" stroke="#ffb84d" stroke-width="0.7" opacity="0.4"/>
+
+          <circle cx="98" cy="378" r="20" class="hotspot-ring" stroke="#ffb84d" opacity="0.2"/>
+          <circle cx="98" cy="378" r="3.5" class="hotspot-dot" fill="#ffb84d" opacity="0.5"/>
+          <text x="98" y="360" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="rgba(255,184,77,0.6)">ULTRASÓNICO ↗</text>
+        </g>
+
+        <!-- Human silhouette hint -->
+        <circle cx="210" cy="30" r="16" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <rect x="194" y="46" width="32" height="18" rx="5" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+        <!-- Click instruction -->
+        <text x="210" y="580" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="rgba(77,200,255,0.2)">↑ TOCÁ CUALQUIER PARTE ↑</text>
+      </svg>
+
+      <!-- DETAIL VIEW -->
+      <div id="detail-view">
+        <div id="detail-svg-wrap"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== PANEL ===== -->
+  <div class="panel">
+    <button id="back-btn" onclick="goBack()">← VOLVER AL EXOESQUELETO</button>
+
+    <div class="panel-title-bar">
+      <div class="sys-label">// Selección activa</div>
+      <div class="panel-title" id="panel-title">SISTEMA NEUMÁTICO COMPLETO</div>
+      <div class="panel-tag" id="panel-tag" style="color:var(--dim)">Seleccioná una parte para ver el detalle</div>
+    </div>
+
+    <div class="panel-body">
+
+      <div class="panel-default" id="def-panel">
+        <div class="big-label">HACÉ CLICK<br>EN CUALQUIER<br>PARTE DEL<br>EXOESQUELETO</div>
+        <div class="arrow-hint">← SELECCIONAR</div>
+      </div>
+
+      <!-- PELVIS -->
+      <div class="info-block" id="info-pelvis">
+        <div class="badge struct">ESTRUCTURA PRINCIPAL</div>
+        <p class="desc">El cinturón pélvico es el punto de anclaje al cuerpo. Fabricado en <strong>aluminio aeronáutico 6061</strong> o fibra de carbono, distribuye el peso sin comprimir la zona lumbar. Aloja el módulo de control y la batería.</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Material</div><div class="spec-v">Al 6061 / Fibra de C.</div></div>
+          <div class="spec-row"><div class="spec-k">Peso total sist.</div><div class="spec-v">&lt; 12 kg</div></div>
+          <div class="spec-row"><div class="spec-k">Fijación</div><div class="spec-v">Velcro + Hebillas</div></div>
+          <div class="spec-row"><div class="spec-k">Integra</div><div class="spec-v">Arduino + LiPo</div></div>
+        </div>
+      </div>
+
+      <!-- TANQUE -->
+      <div class="info-block" id="info-tanque">
+        <div class="badge pneum">FUENTE NEUMÁTICA</div>
+        <p class="desc">El corazón del sistema. Tanques <strong>tipo Paintball de CO₂</strong> a 200–300 bar. Al pasar por el regulador, la presión baja a 4–8 bar utilizables. La alternativa es un <em>micro-compresor de alta presión</em> conectado a batería LiPo para autonomía continua.</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Presión almac.</div><div class="spec-v">200 – 300 bar</div></div>
+          <div class="spec-row"><div class="spec-k">Presión trabajo</div><div class="spec-v">4 – 8 bar</div></div>
+          <div class="spec-row"><div class="spec-k">Autonomía</div><div class="spec-v">~60–90 min</div></div>
+          <div class="spec-row"><div class="spec-k">Alternativa</div><div class="spec-v">Micro-compresor LiPo</div></div>
+        </div>
+        <div class="info-box">La neumática es preferida sobre la hidráulica porque es <strong>más liviana</strong> y el movimiento es más suave — protege las articulaciones del paciente.</div>
+      </div>
+
+      <!-- REGULADOR -->
+      <div class="info-block" id="info-regulador">
+        <div class="badge pneum">COMPONENTE NEUMÁTICO</div>
+        <p class="desc">Reduce la presión del tanque (200+ bar) a un nivel seguro y útil. Sin él, los cilindros se dañarían y el movimiento sería incontrolable. Incluye <strong>manómetro</strong> y válvula de alivio automática.</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Entrada</div><div class="spec-v">200 – 300 bar</div></div>
+          <div class="spec-row"><div class="spec-k">Salida regulada</div><div class="spec-v">4 – 8 bar</div></div>
+          <div class="spec-row"><div class="spec-k">Protección</div><div class="spec-v">Válvula de alivio</div></div>
+          <div class="spec-row"><div class="spec-k">Monitoreo</div><div class="spec-v">Manómetro digital</div></div>
+        </div>
+      </div>
+
+      <!-- VALVULAS -->
+      <div class="info-block" id="info-valvulas">
+        <div class="badge pneum">CONTROL NEUMÁTICO CLAVE</div>
+        <p class="desc">Son el "cerebro físico" del sistema. Un <strong>electroimán (solenoide)</strong> abre o cierra el paso del aire al recibir señal del Arduino. Se usan válvulas <strong>5/2 vías</strong>: 5 puertos y 2 posiciones. Esto permite controlar extensión Y retracción del cilindro de forma independiente.</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Tipo</div><div class="spec-v">Solenoide 5/2 vías</div></div>
+          <div class="spec-row"><div class="spec-k">Voltaje</div><div class="spec-v">12 – 24 V DC</div></div>
+          <div class="spec-row"><div class="spec-k">Tiempo respuesta</div><div class="spec-v">&lt; 50 ms</div></div>
+          <div class="spec-row"><div class="spec-k">Cantidad</div><div class="spec-v">4 válvulas (2/pierna)</div></div>
+        </div>
+        <div class="info-box">Cada válvula controla una cámara del cilindro de doble efecto. Su sincronización precisa genera el ciclo de marcha.</div>
+      </div>
+
+      <!-- CILINDRO -->
+      <div class="info-block" id="info-cilindro">
+        <div class="badge pneum">ACTUADOR PRINCIPAL</div>
+        <p class="desc">Los "músculos artificiales" del sistema. Los de <strong>doble efecto</strong> tienen dos entradas de aire: una para <strong>extender</strong> y otra para <strong>retraer</strong> el vástago. La <em>compresibilidad del aire</em> actúa como amortiguador natural si el exo choca con algo — ventaja clave sobre los sistemas hidráulicos.</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Tipo</div><div class="spec-v">Doble efecto</div></div>
+          <div class="spec-row"><div class="spec-k">Carrera</div><div class="spec-v">100 – 140 mm</div></div>
+          <div class="spec-row"><div class="spec-k">Fuerza @ 6 bar</div><div class="spec-v">hasta 500 N</div></div>
+          <div class="spec-row"><div class="spec-k">Config. paralelo</div><div class="spec-v">2 cil. × pierna</div></div>
+        </div>
+        <p class="desc" style="font-size:13px;margin-top:10px">Configurar <strong>2 cilindros en paralelo por pierna</strong> duplica la fuerza sin aumentar el diámetro del equipo.</p>
+      </div>
+
+      <!-- RODILLA -->
+      <div class="info-block" id="info-rodilla">
+        <div class="badge struct">ARTICULACIÓN MECÁNICA</div>
+        <p class="desc">Pivote de <strong>1 grado de libertad</strong> (flexión/extensión). Incorpora topes mecánicos que limitan el rango a <strong>0°–120°</strong> para evitar hiperextensión. El cilindro del muslo mueve esta articulación.</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Rango mov.</div><div class="spec-v">0° – 120° flexión</div></div>
+          <div class="spec-row"><div class="spec-k">Material</div><div class="spec-v">Al + Acero inox.</div></div>
+          <div class="spec-row"><div class="spec-k">Protección</div><div class="spec-v">Topes antiretorno</div></div>
+          <div class="spec-row"><div class="spec-k">Actuada por</div><div class="spec-v">Cilindro muslo</div></div>
+        </div>
+      </div>
+
+      <!-- TOBILLO -->
+      <div class="info-block" id="info-tobillo">
+        <div class="badge struct">ARTICULACIÓN PASIVA</div>
+        <p class="desc">Puede ser <strong>pasivo</strong> (resorte de retorno) o activo (cilindro adicional). En rehabilitación suele ser pasivo. Permite <strong>dorsiflexión y plantiflexión</strong> (±20°) para adaptarse a terreno irregular y proteger la articulación del usuario.</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Tipo</div><div class="spec-v">Pasivo (resorte)</div></div>
+          <div class="spec-row"><div class="spec-k">Rango</div><div class="spec-v">±20° flexión</div></div>
+          <div class="spec-row"><div class="spec-k">Función</div><div class="spec-v">Absorción impacto</div></div>
+          <div class="spec-row"><div class="spec-k">Adaptación</div><div class="spec-v">Terreno irregular</div></div>
+        </div>
+      </div>
+
+      <!-- PIE / FSR -->
+      <div class="info-block" id="info-pie">
+        <div class="badge sensor">SENSOR DE CONTACTO</div>
+        <p class="desc">Los <strong>FSR (Force Sensitive Resistors)</strong> cambian su resistencia según la presión. Colocados bajo talón y metatarso detectan si el pie toca el suelo. Si el sensor del talón tiene presión pero no el de punta → hay un escalón.</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Posición</div><div class="spec-v">Talón + Metatarso</div></div>
+          <div class="spec-row"><div class="spec-k">Rango</div><div class="spec-v">0.1 – 100 N</div></div>
+          <div class="spec-row"><div class="spec-k">Cantidad total</div><div class="spec-v">4 (2 × pie)</div></div>
+          <div class="spec-row"><div class="spec-k">Señal</div><div class="spec-v">Analógica 0–5V</div></div>
+        </div>
+        <div class="info-box">Detectan la <strong>intención de movimiento</strong>: la presión en el pie abre la electroválvula e inicia la fase de apoyo del ciclo de marcha.</div>
+      </div>
+
+      <!-- IMU -->
+      <div class="info-block" id="info-imu">
+        <div class="badge sensor">DETECCIÓN DE INTENCIÓN</div>
+        <p class="desc">Combina <strong>acelerómetro + giroscopio</strong> para medir la orientación del torso. Cuando el usuario se inclina hacia adelante (como al arrancar a caminar), la IMU lo detecta y el algoritmo inicia el ciclo de marcha.</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Ejes</div><div class="spec-v">6 DOF (3A + 3G)</div></div>
+          <div class="spec-row"><div class="spec-k">Ejemplo</div><div class="spec-v">MPU-6050</div></div>
+          <div class="spec-row"><div class="spec-k">Comunicación</div><div class="spec-v">I²C / SPI</div></div>
+          <div class="spec-row"><div class="spec-k">Frecuencia</div><div class="spec-v">100–1000 Hz</div></div>
+        </div>
+      </div>
+
+      <!-- SONAR -->
+      <div class="info-block" id="info-sonar">
+        <div class="badge sensor">DETECCIÓN DE ENTORNO</div>
+        <p class="desc">Emite pulsos ultrasónicos y mide el tiempo de rebote. Si la distancia <strong>aumenta bruscamente</strong> → escalón para bajar. Si <strong>disminuye</strong> → obstáculo o escalón para subir. El sistema ajusta el tobillo y frena si el desnivel es peligroso (&gt;15 cm).</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Modelo</div><div class="spec-v">HC-SR04 / ToF</div></div>
+          <div class="spec-row"><div class="spec-k">Rango</div><div class="spec-v">2 cm – 400 cm</div></div>
+          <div class="spec-row"><div class="spec-k">Precisión</div><div class="spec-v">±3 mm</div></div>
+          <div class="spec-row"><div class="spec-k">Detecta</div><div class="spec-v">Escalones + Rampas</div></div>
+        </div>
+        <div class="warn-box">⚠️ Si detecta desnivel &gt;15 cm → activa alerta vibrotáctil y frena el ciclo neumático automáticamente.</div>
+      </div>
+
+      <!-- CONTROLADOR -->
+      <div class="info-block" id="info-controlador">
+        <div class="badge struct">CEREBRO DEL SISTEMA</div>
+        <p class="desc">Lee todos los sensores y controla las electroválvulas siguiendo el <strong>ciclo de marcha</strong>:</p>
+        <div class="algo-step"><span class="step-num">①</span>IMU detecta inclinación → inicio del ciclo</div>
+        <div class="algo-step"><span class="step-num">②</span>Sonar verifica terreno seguro</div>
+        <div class="algo-step"><span class="step-num">③</span>Fase apoyo: cilindro derecho presurizado</div>
+        <div class="algo-step"><span class="step-num">④</span>FSR confirma contacto con suelo</div>
+        <div class="algo-step"><span class="step-num">⑤</span>Fase balanceo: cilindro izquierdo contrae</div>
+        <div class="algo-step"><span class="step-num">⑥</span>Sincronización → repite el ciclo</div>
+        <div class="specs" style="margin-top:12px">
+          <div class="spec-row"><div class="spec-k">Plataforma</div><div class="spec-v">Arduino Mega / RPi</div></div>
+          <div class="spec-row"><div class="spec-k">Control</div><div class="spec-v">PID + Lógica marcha</div></div>
+        </div>
+      </div>
+
+      <!-- PÁNICO -->
+      <div class="info-block" id="info-panico">
+        <div class="badge danger">SEGURIDAD CRÍTICA</div>
+        <p class="desc">Al presionarlo, activa <strong>válvulas de escape rápido</strong> que vacían <em>todo</em> el aire del sistema en menos de 2 segundos. Con los cilindros sin presión, el exo queda en modo <strong>pasivo total</strong> — el usuario puede moverse o ser asistido sin resistencia.</p>
+        <div class="specs">
+          <div class="spec-row"><div class="spec-k">Tiempo escape</div><div class="spec-v">&lt; 2 segundos</div></div>
+          <div class="spec-row"><div class="spec-k">Tipo</div><div class="spec-v">Mecánico + Eléctrico</div></div>
+          <div class="spec-row"><div class="spec-k">Resultado</div><div class="spec-v">Modo pasivo total</div></div>
+          <div class="spec-row"><div class="spec-k">Norma</div><div class="spec-v">Obligatorio (ISO 13482)</div></div>
+        </div>
+        <div class="warn-box">🚨 Todo exoesqueleto certificado DEBE incluir este sistema. Sin él no puede usarse con pacientes.</div>
+      </div>
+
+    </div><!-- /panel-body -->
+
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:#4dc8ff"></div>Neumático</div>
+      <div class="leg"><div class="leg-dot" style="background:#3dffa0"></div>Válvulas/Control</div>
+      <div class="leg"><div class="leg-dot" style="background:#ffb84d"></div>Sensores</div>
+      <div class="leg"><div class="leg-dot" style="background:#ff5050"></div>Seguridad</div>
+      <div class="leg"><div class="leg-dot" style="background:#1a4a7a"></div>Estructura</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===== DETAIL SVG TEMPLATES =====
+const DETAILS = {
+
+tanque: `<svg viewBox="0 0 640 460" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<!-- Tank body -->
+<rect x="240" y="40" width="120" height="280" rx="20" fill="#0a0a22" stroke="#3a3a8a" stroke-width="2"/>
+<rect x="253" y="56" width="94" height="248" rx="10" fill="rgba(80,80,200,0.07)"/>
+<!-- Pressure lines -->
+<line x1="248" y1="100" x2="352" y2="100" stroke="rgba(100,100,220,0.3)" stroke-width="1.5"/>
+<line x1="248" y1="130" x2="352" y2="130" stroke="rgba(100,100,220,0.22)" stroke-width="1.2"/>
+<line x1="248" y1="160" x2="352" y2="160" stroke="rgba(100,100,220,0.16)" stroke-width="1"/>
+<line x1="248" y1="190" x2="352" y2="190" stroke="rgba(100,100,220,0.12)" stroke-width="1"/>
+<line x1="248" y1="220" x2="352" y2="220" stroke="rgba(100,100,220,0.08)" stroke-width="1"/>
+<!-- Top valve -->
+<rect x="275" y="22" width="50" height="22" rx="5" fill="#14143a" stroke="#4a4aaa" stroke-width="1.5"/>
+<rect x="285" y="28" width="30" height="10" rx="2" fill="#1e1e52" stroke="#6060cc" stroke-width="1"/>
+<!-- Hose out -->
+<path d="M360 200 Q400 200 400 280 Q400 340 460 340" fill="none" stroke="#4dc8ff" stroke-width="2.5" stroke-dasharray="5,3" marker-end="url(#a)"/>
+<!-- Regulator at end -->
+<circle cx="480" cy="340" r="26" fill="#061828" stroke="#2a7aaa" stroke-width="1.5"/>
+<circle cx="480" cy="340" r="16" fill="#081a2a" stroke="#3a8aba" stroke-width="1.2"/>
+<circle cx="480" cy="340" r="6" fill="#103040"/>
+<line x1="480" y1="324" x2="480" y2="330" stroke="#3a8aba" stroke-width="1.5"/>
+<line x1="465" y1="340" x2="471" y2="340" stroke="#3a8aba" stroke-width="1.5"/>
+<line x1="480" y1="340" x2="476" y2="328" stroke="#ffcc00" stroke-width="2"/>
+<!-- Labels with arrows -->
+<line x1="240" y1="160" x2="120" y2="110" stroke="rgba(77,200,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="115" y="100" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Pared del tanque</text>
+<text x="115" y="115" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">CO₂ / Aire comprimido</text>
+<line x1="275" y1="33" x2="180" y2="33" stroke="rgba(77,200,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="170" y="29" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Válvula de cabeza</text>
+<text x="170" y="44" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">200-300 bar</text>
+<line x1="400" y1="280" x2="440" y2="220" stroke="rgba(77,200,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="448" y="216" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Manguera neumática</text>
+<text x="448" y="231" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Alta presión → regulador</text>
+<line x1="506" y1="340" x2="560" y2="310" stroke="rgba(77,200,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="564" y="306" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Regulador de presión</text>
+<text x="564" y="321" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Reduce a 4-8 bar</text>
+<!-- Pressure indicator -->
+<text x="300" y="390" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="11" fill="#3a6080">▲ 200-300 bar almacenados</text>
+<text x="300" y="408" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#2a5060">Equivalente a ~3000 psi</text>
+</svg>`,
+
+valvulas: `<svg viewBox="0 0 640 460" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Manifold -->
+<rect x="130" y="160" width="340" height="28" rx="5" fill="#04120a" stroke="#2a7a2a" stroke-width="1.5"/>
+<!-- 4 valve bodies -->
+<rect x="148" y="155" width="54" height="90" rx="6" fill="#061a10" stroke="#3dffa0" stroke-width="1.2"/>
+<rect x="218" y="155" width="54" height="90" rx="6" fill="#061a10" stroke="#3dffa0" stroke-width="1.2"/>
+<rect x="288" y="155" width="54" height="90" rx="6" fill="#061a10" stroke="#3dffa0" stroke-width="1.2"/>
+<rect x="358" y="155" width="54" height="90" rx="6" fill="#061a10" stroke="#3dffa0" stroke-width="1.2"/>
+<!-- Solenoid coils on each valve -->
+<rect x="152" y="158" width="46" height="22" rx="3" fill="#0a3a14" stroke="rgba(61,255,160,0.4)" stroke-width="1"/>
+<rect x="222" y="158" width="46" height="22" rx="3" fill="#0a3a14" stroke="rgba(61,255,160,0.4)" stroke-width="1"/>
+<rect x="292" y="158" width="46" height="22" rx="3" fill="#0a3a14" stroke="rgba(61,255,160,0.4)" stroke-width="1"/>
+<rect x="362" y="158" width="46" height="22" rx="3" fill="#0a3a14" stroke="rgba(61,255,160,0.4)" stroke-width="1"/>
+<!-- Valve numbers -->
+<text x="175" y="173" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#3dffa0">V1</text>
+<text x="245" y="173" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#3dffa0">V2</text>
+<text x="315" y="173" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#3dffa0">V3</text>
+<text x="385" y="173" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#3dffa0">V4</text>
+<!-- Valve port circles at bottom -->
+<circle cx="175" cy="240" r="6" fill="#3dffa0" opacity="0.7"/>
+<circle cx="245" cy="240" r="6" fill="#3dffa0" opacity="0.5"/>
+<circle cx="315" cy="240" r="6" fill="#3dffa0" opacity="0.7"/>
+<circle cx="385" cy="240" r="6" fill="#3dffa0" opacity="0.5"/>
+<!-- Hoses going to cylinders (animated) -->
+<path d="M175 246 Q175 290 145 310" fill="none" stroke="#4dc8ff" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#a)" class="flow-line"/>
+<path d="M245 246 Q245 290 215 310" fill="none" stroke="#4dc8ff" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#a)" class="flow-line" style="animation-delay:-0.4s"/>
+<path d="M315 246 Q315 290 345 310" fill="none" stroke="#4dc8ff" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#a)" class="flow-line" style="animation-delay:-0.8s"/>
+<path d="M385 246 Q385 290 415 310" fill="none" stroke="#4dc8ff" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#a)" class="flow-line" style="animation-delay:-1.2s"/>
+<!-- Cylinder tops schematic -->
+<rect x="118" y="310" width="54" height="60" rx="4" fill="#04233a" stroke="#4dc8ff" stroke-width="1"/>
+<rect x="188" y="310" width="54" height="60" rx="4" fill="#04233a" stroke="#4dc8ff" stroke-width="1"/>
+<rect x="318" y="310" width="54" height="60" rx="4" fill="#04233a" stroke="#4dc8ff" stroke-width="1"/>
+<rect x="388" y="310" width="54" height="60" rx="4" fill="#04233a" stroke="#4dc8ff" stroke-width="1"/>
+<text x="145" y="344" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#4dc8ff">CIL.IZQ</text>
+<text x="145" y="356" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#3a6080">MUSLO</text>
+<text x="215" y="344" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#4dc8ff">CIL.IZQ</text>
+<text x="215" y="356" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#3a6080">PIERNA</text>
+<text x="345" y="344" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#4dc8ff">CIL.DER</text>
+<text x="345" y="356" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#3a6080">MUSLO</text>
+<text x="415" y="344" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#4dc8ff">CIL.DER</text>
+<text x="415" y="356" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#3a6080">PIERNA</text>
+<!-- Labels -->
+<line x1="175" y1="155" x2="100" y2="90" stroke="rgba(61,255,160,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="95" y="80" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="12" fill="#3dffa0">Bobina solenoide</text>
+<text x="95" y="95" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#2a5040">12-24V DC del Arduino</text>
+<line x1="175" y1="200" x2="60" y2="200" stroke="rgba(61,255,160,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="55" y="196" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="12" fill="#3dffa0">Cuerpo 5/2 vías</text>
+<text x="55" y="212" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#2a5040">5 puertos, 2 posiciones</text>
+<line x1="385" y1="155" x2="520" y2="90" stroke="rgba(61,255,160,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="526" y="80" font-family="'Share Tech Mono',monospace" font-size="12" fill="#3dffa0">Entrada de aire</text>
+<text x="526" y="95" font-family="'Share Tech Mono',monospace" font-size="10" fill="#2a5040">Desde regulador</text>
+<line x1="385" y1="240" x2="530" y2="240" stroke="rgba(61,255,160,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="536" y="236" font-family="'Share Tech Mono',monospace" font-size="12" fill="#3dffa0">Salida a cilindro</text>
+<text x="536" y="251" font-family="'Share Tech Mono',monospace" font-size="10" fill="#2a5040">Control exten. / retrac.</text>
+<text x="280" y="430" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">↑ El flujo de aire animado representa la apertura de la válvula durante la marcha</text>
+</svg>`,
+
+cilindro: `<svg viewBox="0 0 640 480" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Cylinder cross section -->
+<rect x="220" y="40" width="120" height="300" rx="10" fill="#04233a" stroke="#4dc8ff" stroke-width="2"/>
+<rect x="234" y="54" width="92" height="280" rx="6" fill="rgba(77,200,255,0.04)"/>
+<!-- Piston -->
+<rect x="228" y="180" width="104" height="28" rx="4" fill="#0f3a5a" stroke="#4dc8ff" stroke-width="1.5"/>
+<rect x="240" y="186" width="80" height="16" rx="2" fill="#1a5070"/>
+<!-- Piston rod -->
+<rect x="271" y="208" width="18" height="132" rx="3" fill="#0a2840" stroke="#2a5070" stroke-width="1.2"/>
+<!-- O-ring on piston -->
+<rect x="228" y="196" width="104" height="4" rx="2" fill="#003a5a" stroke="#4dc8ff" stroke-width="0.8" opacity="0.8"/>
+<!-- Port A top -->
+<rect x="200" y="60" width="22" height="16" rx="3" fill="#04233a" stroke="#4dc8ff" stroke-width="1.2"/>
+<line x1="200" y1="68" x2="220" y2="68" stroke="#4dc8ff" stroke-width="2" class="flow-line"/>
+<!-- Port B bottom -->
+<rect x="200" y="280" width="22" height="16" rx="3" fill="#04233a" stroke="#4dc8ff" stroke-width="1.2"/>
+<line x1="200" y1="288" x2="220" y2="288" stroke="#4dc8ff" stroke-width="2" class="flow-line" style="animation-delay:-0.6s"/>
+<!-- Air pressure zones labels with shading -->
+<rect x="234" y="56" width="92" height="122" rx="4" fill="rgba(77,200,255,0.08)"/>
+<text x="280" y="118" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="rgba(77,200,255,0.5)">CÁMARA A</text>
+<rect x="234" y="212" width="92" height="120" rx="4" fill="rgba(77,200,255,0.04)"/>
+<text x="280" y="272" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="rgba(77,200,255,0.3)">CÁMARA B</text>
+<!-- Labels -->
+<line x1="220" y1="68" x2="120" y2="50" stroke="rgba(77,200,255,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="114" y="40" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="13" fill="#4dc8ff">Puerto A (extensión)</text>
+<text x="114" y="56" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Aire entra → émbolo baja</text>
+<line x1="220" y1="288" x2="120" y2="310" stroke="rgba(77,200,255,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="114" y="300" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="13" fill="#4dc8ff">Puerto B (retracción)</text>
+<text x="114" y="316" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Aire entra → émbolo sube</text>
+<line x1="340" y1="194" x2="450" y2="160" stroke="rgba(77,200,255,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="458" y="150" font-family="'Share Tech Mono',monospace" font-size="13" fill="#4dc8ff">Émbolo (piston)</text>
+<text x="458" y="166" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Separa las 2 cámaras</text>
+<line x1="340" y1="270" x2="450" y2="270" stroke="rgba(77,200,255,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="458" y="265" font-family="'Share Tech Mono',monospace" font-size="13" fill="#4dc8ff">Vástago (piston rod)</text>
+<text x="458" y="280" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Transmite fuerza a articulación</text>
+<line x1="340" y1="80" x2="450" y2="60" stroke="rgba(77,200,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="458" y="50" font-family="'Share Tech Mono',monospace" font-size="13" fill="#4dc8ff">Camisa del cilindro</text>
+<text x="458" y="65" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Aluminio — hasta 500N @ 6bar</text>
+<!-- Advantage note -->
+<text x="280" y="430" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">⚡ La compresibilidad del aire amortigua impactos → protege articulaciones</text>
+</svg>`,
+
+sonar: `<svg viewBox="0 0 640 440" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Floor normal -->
+<rect x="100" y="340" width="440" height="14" rx="3" fill="#0a1628" stroke="#1a3a5c" stroke-width="1.5"/>
+<text x="320" y="368" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="11" fill="#2a4a6a">SUELO PLANO</text>
+<!-- Step down scenario -->
+<rect x="430" y="340" width="110" height="14" rx="0" fill="var(--bg)" stroke="none"/>
+<rect x="430" y="390" width="110" height="14" rx="3" fill="#0a1628" stroke="#1a3a5c" stroke-width="1.5"/>
+<line x1="430" y1="340" x2="430" y2="404" stroke="#1a3a5c" stroke-width="1.5"/>
+<text x="485" y="416" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#ffb84d">↓ ESCALÓN</text>
+<!-- Sensor body on shin -->
+<rect x="188" y="160" width="80" height="40" rx="6" fill="#1a1500" stroke="#ffb84d" stroke-width="2"/>
+<circle cx="210" cy="180" r="14" fill="#241e00" stroke="#ffb84d" stroke-width="1.5"/>
+<circle cx="250" cy="180" r="14" fill="#241e00" stroke="#ffb84d" stroke-width="1.5"/>
+<text x="228" y="185" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#ffb84d" dominant-baseline="middle">TX  RX</text>
+<!-- Ultrasonic waves fan out — normal ground -->
+<path d="M210 194 Q200 250 180 330" fill="none" stroke="#ffb84d" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.7" class="flow-line"/>
+<path d="M228 200 Q228 265 228 330" fill="none" stroke="#ffb84d" stroke-width="2" stroke-dasharray="6,3" opacity="0.9" class="flow-line" style="animation-delay:-0.3s"/>
+<path d="M250 194 Q260 250 280 330" fill="none" stroke="#ffb84d" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.7" class="flow-line" style="animation-delay:-0.6s"/>
+<!-- Bounce back arrow -->
+<path d="M228 330 Q210 280 228 200" fill="none" stroke="#ffcc44" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5" marker-end="url(#a)"/>
+<!-- Stair detection wave -->
+<path d="M450 194 Q470 260 470 380" fill="none" stroke="#ff8844" stroke-width="1.8" stroke-dasharray="5,3" opacity="0.6" class="flow-line" style="animation-delay:-0.9s"/>
+<!-- Distance indicators -->
+<line x1="290" y1="200" x2="290" y2="330" stroke="rgba(255,184,77,0.3)" stroke-width="1" stroke-dasharray="2,3"/>
+<line x1="283" y1="200" x2="297" y2="200" stroke="rgba(255,184,77,0.4)" stroke-width="1"/>
+<line x1="283" y1="330" x2="297" y2="330" stroke="rgba(255,184,77,0.4)" stroke-width="1"/>
+<text x="306" y="268" font-family="'Share Tech Mono',monospace" font-size="11" fill="#ffb84d" dominant-baseline="middle">~25 cm</text>
+<text x="306" y="284" font-family="'Share Tech Mono',monospace" font-size="9" fill="#7a6020">normal</text>
+<!-- Step distance indicator -->
+<line x1="490" y1="200" x2="490" y2="380" stroke="rgba(255,136,68,0.3)" stroke-width="1" stroke-dasharray="2,3"/>
+<text x="504" y="295" font-family="'Share Tech Mono',monospace" font-size="11" fill="#ff8844" dominant-baseline="middle">~75 cm</text>
+<text x="504" y="311" font-family="'Share Tech Mono',monospace" font-size="9" fill="#8a4020">¡ALERTA!</text>
+<!-- Labels -->
+<line x1="188" y1="165" x2="100" y2="110" stroke="rgba(255,184,77,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="94" y="100" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="13" fill="#ffb84d">Transmisor (TX)</text>
+<text x="94" y="115" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#5a4a20">Emite pulso 40 kHz</text>
+<line x1="268" y1="165" x2="380" y2="100" stroke="rgba(255,184,77,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="388" y="90" font-family="'Share Tech Mono',monospace" font-size="13" fill="#ffb84d">Receptor (RX)</text>
+<text x="388" y="105" font-family="'Share Tech Mono',monospace" font-size="10" fill="#5a4a20">Mide tiempo de retorno</text>
+<text x="320" y="418" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Distancia = (tiempo × velocidad sonido) ÷ 2 = 343 m/s</text>
+</svg>`,
+
+pie: `<svg viewBox="0 0 640 440" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Foot plate top view -->
+<text x="320" y="36" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="11" fill="#3a6080">VISTA SUPERIOR — PLACA DE PIE</text>
+<rect x="160" y="50" width="280" height="120" rx="30" fill="#040c1a" stroke="#1a3a5c" stroke-width="2"/>
+<!-- FSR sensor heel -->
+<circle cx="220" cy="110" r="28" fill="#2a0f05" stroke="#ff8040" stroke-width="2"/>
+<circle cx="220" cy="110" r="18" fill="#3a1408" stroke="#ff6020" stroke-width="1"/>
+<circle cx="220" cy="110" r="8" fill="#ff6020" opacity="0.6"/>
+<text x="220" y="114" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#ff8040" dominant-baseline="middle">FSR</text>
+<!-- FSR sensor ball of foot -->
+<circle cx="390" cy="100" r="24" fill="#2a0f05" stroke="#ff8040" stroke-width="2"/>
+<circle cx="390" cy="100" r="15" fill="#3a1408" stroke="#ff6020" stroke-width="1"/>
+<circle cx="390" cy="100" r="6" fill="#ff6020" opacity="0.6"/>
+<text x="390" y="103" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#ff8040" dominant-baseline="middle">FSR</text>
+<!-- Side view of foot -->
+<text x="320" y="218" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="11" fill="#3a6080">VISTA LATERAL — CICLO DE APOYO</text>
+<rect x="140" y="240" width="320" height="60" rx="16" fill="#040c1a" stroke="#1a3a5c" stroke-width="1.5"/>
+<!-- Heel sensor lit -->
+<circle cx="175" cy="270" r="18" fill="#2a0f05" stroke="#ff6020" stroke-width="2"/>
+<circle cx="175" cy="270" r="10" fill="#ff4400" opacity="0.8"/>
+<text x="175" y="274" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#fff" dominant-baseline="middle">TALÓN</text>
+<!-- Ball sensor -->
+<circle cx="425" cy="270" r="18" fill="#2a0f05" stroke="#ff8040" stroke-width="2" opacity="0.4"/>
+<circle cx="425" cy="270" r="10" fill="#441a00" opacity="0.4"/>
+<text x="425" y="274" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#805030" dominant-baseline="middle">PUNTA</text>
+<!-- Ground contact line -->
+<line x1="140" y1="300" x2="460" y2="300" stroke="#1a4a8a" stroke-width="2"/>
+<!-- Pressure arrow from heel -->
+<line x1="175" y1="300" x2="175" y2="340" stroke="#ff6020" stroke-width="2" marker-end="url(#a)" opacity="0.8"/>
+<text x="175" y="358" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#ff8040">APOYO</text>
+<!-- State indicator -->
+<rect x="240" y="318" width="160" height="22" rx="4" fill="rgba(255,100,0,0.1)" stroke="rgba(255,100,0,0.3)" stroke-width="1"/>
+<text x="320" y="332" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#ff8040" dominant-baseline="middle">→ Arduino abre válvula V1</text>
+<!-- Labels -->
+<line x1="192" y1="110" x2="100" y2="60" stroke="rgba(255,128,64,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="94" y="48" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="13" fill="#ff8040">Sensor FSR — talón</text>
+<text x="94" y="64" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#6a4030">Detecta fase de apoyo</text>
+<line x1="414" y1="100" x2="520" y2="60" stroke="rgba(255,128,64,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="528" y="48" font-family="'Share Tech Mono',monospace" font-size="13" fill="#ff8040">Sensor FSR — metatarso</text>
+<text x="528" y="64" font-family="'Share Tech Mono',monospace" font-size="10" fill="#6a4030">Detecta despegue</text>
+<text x="320" y="418" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">FSR = Force Sensitive Resistor — resistencia varía con la presión aplicada</text>
+</svg>`,
+
+imu: `<svg viewBox="0 0 640 420" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Human torso schematic -->
+<rect x="240" y="40" width="120" height="180" rx="16" fill="#050d1a" stroke="#1a3a5c" stroke-width="1.5" opacity="0.6"/>
+<text x="300" y="130" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#2a4060">TORSO</text>
+<!-- IMU chip on torso -->
+<rect x="270" y="80" width="60" height="36" rx="4" fill="#0f0825" stroke="#9050ff" stroke-width="1.8"/>
+<rect x="276" y="86" width="18" height="12" rx="2" fill="#1a0840" stroke="#9050ff" stroke-width="0.8"/>
+<text x="285" y="93.5" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="6" fill="#9050ff" dominant-baseline="middle">ACC</text>
+<rect x="302" y="86" width="22" height="12" rx="2" fill="#1a0840" stroke="#9050ff" stroke-width="0.8"/>
+<text x="313" y="93.5" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="6" fill="#9050ff" dominant-baseline="middle">GYRO</text>
+<!-- Tilt indicator — neutral -->
+<text x="300" y="50" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">POSICIÓN NEUTRAL</text>
+<line x1="300" y1="220" x2="300" y2="340" stroke="rgba(144,80,255,0.2)" stroke-width="1" stroke-dasharray="3,3"/>
+<!-- Lean forward indication -->
+<g transform="translate(420,100) rotate(15)">
+  <rect x="-50" y="-70" width="100" height="140" rx="14" fill="none" stroke="#9050ff" stroke-width="1.5" stroke-dasharray="4,2" opacity="0.7"/>
+  <text x="0" y="0" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#9050ff">INCLINADO</text>
+  <text x="0" y="14" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#9050ff">→ INICIO</text>
+</g>
+<!-- Angle arc -->
+<path d="M300 160 Q310 180 322 168" fill="none" stroke="#9050ff" stroke-width="1.5" opacity="0.7"/>
+<text x="330" y="180" font-family="'Share Tech Mono',monospace" font-size="9" fill="#9050ff">~8°</text>
+<!-- Trigger arrow to Arduino -->
+<path d="M330 98 Q380 98 440 280 Q460 330 500 340" fill="none" stroke="#3dffa0" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#a)" opacity="0.6"/>
+<!-- Arduino schematic at bottom right -->
+<rect x="480" y="320" width="80" height="50" rx="4" fill="#060f06" stroke="#1a3a1a" stroke-width="1.2"/>
+<text x="520" y="344" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#3dffa0" dominant-baseline="middle">ARDUINO</text>
+<text x="520" y="360" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#1a5a1a" dominant-baseline="middle">→ INICIA CICLO</text>
+<!-- Labels -->
+<line x1="270" y1="86" x2="140" y2="50" stroke="rgba(144,80,255,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="134" y="38" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="13" fill="#9050ff">Sensor IMU (MPU-6050)</text>
+<text x="134" y="54" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#5a3080">Acelerómetro + Giroscopio</text>
+<line x1="330" y1="98" x2="460" y2="60" stroke="rgba(144,80,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="468" y="48" font-family="'Share Tech Mono',monospace" font-size="12" fill="#9050ff">Detección de intención</text>
+<text x="468" y="63" font-family="'Share Tech Mono',monospace" font-size="10" fill="#5a3080">Inclinación → señal inicio</text>
+<text x="320" y="400" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">6 DOF = 3 ejes acelerómetro + 3 ejes giroscopio → orientación completa en tiempo real</text>
+</svg>`,
+
+panico: `<svg viewBox="0 0 640 420" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Button -->
+<circle cx="160" cy="130" r="50" fill="#1a0404" stroke="#8a1010" stroke-width="2.5"/>
+<circle cx="160" cy="130" r="36" fill="#220606" stroke="#cc2020" stroke-width="2"/>
+<circle cx="160" cy="130" r="22" fill="#cc1111" opacity="0.9"/>
+<text x="160" y="133" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#fff" dominant-baseline="middle">PÁNICO</text>
+<!-- Wire to escape valves -->
+<path d="M210 130 Q300 130 350 180" fill="none" stroke="#ff5050" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#a)" class="flow-line"/>
+<!-- Escape valve schematic -->
+<rect x="350" y="165" width="70" height="44" rx="5" fill="#1a0404" stroke="#ff5050" stroke-width="1.5"/>
+<rect x="355" y="170" width="60" height="16" rx="3" fill="#2a0808" stroke="rgba(255,80,80,0.4)" stroke-width="0.8"/>
+<text x="385" y="180" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#ff5050" dominant-baseline="middle">V. ESCAPE</text>
+<text x="385" y="196" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#8a3030" dominant-baseline="middle">RÁPIDO</text>
+<!-- Air escaping from valve -->
+<path d="M420 185 Q450 165 480 150" fill="none" stroke="#4dc8ff" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#a)" opacity="0.7" class="flow-line"/>
+<path d="M420 185 Q455 185 490 185" fill="none" stroke="#4dc8ff" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#a)" opacity="0.5" class="flow-line" style="animation-delay:-0.4s"/>
+<path d="M420 185 Q450 205 475 220" fill="none" stroke="#4dc8ff" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#a)" opacity="0.4" class="flow-line" style="animation-delay:-0.8s"/>
+<text x="500" y="148" font-family="'Share Tech Mono',monospace" font-size="10" fill="#4dc8ff">AIRE LIBRE</text>
+<!-- Result: passive cylinders -->
+<rect x="200" y="280" width="240" height="70" rx="8" fill="#060e18" stroke="#1a3a5c" stroke-width="1.5"/>
+<text x="320" y="308" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">MODO PASIVO TOTAL</text>
+<text x="320" y="328" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#2a4a6a">Cilindros sin presión → libre movimiento</text>
+<text x="320" y="343" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#2a4a6a">Asistencia manual posible</text>
+<!-- Arrow from valve to result -->
+<line x1="385" y1="209" x2="340" y2="278" stroke="rgba(255,80,80,0.4)" stroke-width="1.5" marker-end="url(#a)"/>
+<!-- Time indicator -->
+<rect x="430" y="260" width="130" height="36" rx="4" fill="rgba(255,80,80,0.07)" stroke="rgba(255,80,80,0.25)" stroke-width="1"/>
+<text x="495" y="276" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="11" fill="#ff5050" dominant-baseline="middle">⏱ &lt; 2 seg</text>
+<text x="495" y="290" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#8a3030" dominant-baseline="middle">vaciado total</text>
+<!-- Labels -->
+<line x1="110" y1="105" x2="70" y2="60" stroke="rgba(255,80,80,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="64" y="48" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="13" fill="#ff5050">Botón de pánico</text>
+<text x="64" y="64" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#8a3030">Mecánico + señal eléctrica</text>
+<line x1="385" y1="165" x2="440" y2="100" stroke="rgba(255,80,80,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="448" y="88" font-family="'Share Tech Mono',monospace" font-size="12" fill="#ff5050">Válvula de escape rápido</text>
+<text x="448" y="103" font-family="'Share Tech Mono',monospace" font-size="10" fill="#8a3030">Abre completamente en ms</text>
+<text x="320" y="400" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Norma ISO 13482 — obligatorio en exoesqueletos médicos certificados</text>
+</svg>`,
+
+controlador: `<svg viewBox="0 0 640 440" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Arduino board -->
+<rect x="230" y="120" width="180" height="120" rx="6" fill="#060f06" stroke="#1a3a1a" stroke-width="1.5"/>
+<rect x="238" y="128" width="164" height="104" rx="3" fill="#080f08"/>
+<!-- PCB traces -->
+<line x1="240" y1="145" x2="406" y2="145" stroke="#163016" stroke-width="1"/>
+<line x1="240" y1="165" x2="406" y2="165" stroke="#163016" stroke-width="1"/>
+<line x1="240" y1="185" x2="406" y2="185" stroke="#163016" stroke-width="1"/>
+<line x1="240" y1="205" x2="406" y2="205" stroke="#163016" stroke-width="1"/>
+<line x1="280" y1="128" x2="280" y2="232" stroke="#163016" stroke-width="1"/>
+<line x1="320" y1="128" x2="320" y2="232" stroke="#163016" stroke-width="1"/>
+<line x1="360" y1="128" x2="360" y2="232" stroke="#163016" stroke-width="1"/>
+<!-- Main MCU chip -->
+<rect x="295" y="148" width="50" height="50" rx="3" fill="#143a14" stroke="#3dffa0" stroke-width="1.2"/>
+<text x="320" y="174" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#3dffa0" dominant-baseline="middle">ATmega</text>
+<text x="320" y="187" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#1a5a1a" dominant-baseline="middle">2560</text>
+<!-- LED -->
+<circle cx="395" cy="135" r="5" fill="#3dffa0" opacity="0.9"/>
+<!-- Sensor inputs from left -->
+<text x="100" y="80" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="11" fill="#9050ff">IMU</text>
+<line x1="104" y1="78" x2="230" y2="150" stroke="#9050ff" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a)" class="flow-line"/>
+<text x="100" y="130" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="11" fill="#ff8040">FSR ×4</text>
+<line x1="104" y1="128" x2="230" y2="170" stroke="#ff8040" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a)" class="flow-line" style="animation-delay:-0.5s"/>
+<text x="100" y="180" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="11" fill="#ffb84d">Sonar ×2</text>
+<line x1="104" y1="178" x2="230" y2="188" stroke="#ffb84d" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a)" class="flow-line" style="animation-delay:-1s"/>
+<!-- Outputs to right — valves -->
+<text x="540" y="90" font-family="'Share Tech Mono',monospace" font-size="11" fill="#3dffa0">Válvula V1</text>
+<line x1="410" y1="150" x2="536" y2="88" stroke="#3dffa0" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a)" class="flow-line" style="animation-delay:-0.3s"/>
+<text x="540" y="140" font-family="'Share Tech Mono',monospace" font-size="11" fill="#3dffa0">Válvula V2</text>
+<line x1="410" y1="168" x2="536" y2="138" stroke="#3dffa0" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a)" class="flow-line" style="animation-delay:-0.6s"/>
+<text x="540" y="190" font-family="'Share Tech Mono',monospace" font-size="11" fill="#3dffa0">Válvula V3</text>
+<line x1="410" y1="188" x2="536" y2="188" stroke="#3dffa0" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a)" class="flow-line" style="animation-delay:-0.9s"/>
+<text x="540" y="240" font-family="'Share Tech Mono',monospace" font-size="11" fill="#3dffa0">Válvula V4</text>
+<line x1="410" y1="210" x2="536" y2="238" stroke="#3dffa0" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a)" class="flow-line" style="animation-delay:-1.2s"/>
+<!-- Algorithm box -->
+<rect x="200" y="290" width="240" height="100" rx="6" fill="#040c14" stroke="#1a3a5c" stroke-width="1"/>
+<text x="320" y="315" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#4dc8ff">CICLO DE MARCHA (PID)</text>
+<text x="320" y="335" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#2a5070">① IMU inclina → inicio</text>
+<text x="320" y="350" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#2a5070">② Apoyo → cilindro der. presuriza</text>
+<text x="320" y="365" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#2a5070">③ FSR confirma → balanceo izq.</text>
+<text x="320" y="380" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#2a5070">④ Sincroniza → repite ciclo</text>
+<line x1="320" y1="240" x2="320" y2="288" stroke="rgba(77,200,255,0.3)" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#a)"/>
+<text x="320" y="418" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Señales de entrada: analógicas (FSR) + I²C (IMU) + digital (Sonar)</text>
+</svg>`,
+
+pelvis: `<svg viewBox="0 0 640 400" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Belt top view -->
+<rect x="120" y="120" width="400" height="70" rx="12" fill="#0a1e35" stroke="#1a4a7a" stroke-width="2"/>
+<rect x="132" y="130" width="376" height="18" rx="6" fill="rgba(77,200,255,0.05)"/>
+<rect x="132" y="153" width="376" height="18" rx="6" fill="rgba(77,200,255,0.04)"/>
+<!-- Center module (Arduino + battery) -->
+<rect x="270" y="108" width="100" height="96" rx="6" fill="#060f06" stroke="#1a3a1a" stroke-width="1.5"/>
+<text x="320" y="155" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#3dffa0">ARDUINO</text>
+<text x="320" y="170" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#1a5a1a">+ LiPo 11.1V</text>
+<!-- Bolts -->
+<circle cx="148" cy="155" r="7" fill="#060e18" stroke="#1a4a7a" stroke-width="1.5"/>
+<circle cx="492" cy="155" r="7" fill="#060e18" stroke="#1a4a7a" stroke-width="1.5"/>
+<circle cx="220" cy="155" r="7" fill="#060e18" stroke="#1a4a7a" stroke-width="1.5"/>
+<circle cx="420" cy="155" r="7" fill="#060e18" stroke="#1a4a7a" stroke-width="1.5"/>
+<!-- Air channel -->
+<line x1="160" y1="155" x2="270" y2="155" stroke="#4dc8ff" stroke-width="2" stroke-dasharray="5,3" opacity="0.4"/>
+<line x1="370" y1="155" x2="480" y2="155" stroke="#4dc8ff" stroke-width="2" stroke-dasharray="5,3" opacity="0.4"/>
+<!-- Leg extensions going down -->
+<rect x="148" y="190" width="30" height="60" rx="5" fill="#0a1e35" stroke="#1a4a7a" stroke-width="1.5"/>
+<rect x="462" y="190" width="30" height="60" rx="5" fill="#0a1e35" stroke="#1a4a7a" stroke-width="1.5"/>
+<!-- Labels -->
+<line x1="120" y1="135" x2="50" y2="80" stroke="rgba(77,200,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="44" y="68" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="13" fill="#4dc8ff">Chasis aluminio 6061</text>
+<text x="44" y="84" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">O fibra de carbono</text>
+<line x1="270" y1="135" x2="200" y2="70" stroke="rgba(61,255,160,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="194" y="58" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="12" fill="#3dffa0">Módulo de control</text>
+<text x="194" y="73" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#2a5040">Arduino + batería LiPo</text>
+<line x1="232" y1="155" x2="190" y2="260" stroke="rgba(77,200,255,0.3)" stroke-width="1" marker-end="url(#a)"/>
+<text x="184" y="274" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Canal de aire comprimido</text>
+<text x="184" y="289" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Distribuye a ambas piernas</text>
+<line x1="163" y1="197" x2="100" y2="260" stroke="rgba(77,200,255,0.3)" stroke-width="1" marker-end="url(#a)"/>
+<text x="94" y="274" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Extensión muslo</text>
+<text x="94" y="289" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Conecta estructura pierna</text>
+<line x1="492" y1="135" x2="560" y2="80" stroke="rgba(77,200,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="568" y="68" font-family="'Share Tech Mono',monospace" font-size="13" fill="#4dc8ff">Hebillas de ajuste</text>
+<text x="568" y="84" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Fit universal</text>
+<text x="320" y="370" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Punto de anclaje principal — distribuye el peso del sistema sin comprimir zona lumbar</text>
+</svg>`,
+
+rodilla: `<svg viewBox="0 0 640 400" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Thigh segment above -->
+<rect x="265" y="30" width="60" height="100" rx="8" fill="#0a1e35" stroke="#1a4a7a" stroke-width="1.5"/>
+<rect x="295" y="30" width="20" height="100" rx="3" fill="#04233a" stroke="#4dc8ff" stroke-width="1" opacity="0.7"/>
+<!-- Knee joint -->
+<circle cx="295" cy="170" r="44" fill="#081828" stroke="#2a6aaa" stroke-width="2.5"/>
+<circle cx="295" cy="170" r="30" fill="#060e18" stroke="#3a7aaa" stroke-width="2"/>
+<circle cx="295" cy="170" r="14" fill="#0a1828" stroke="#4a8aba" stroke-width="1.5"/>
+<circle cx="295" cy="170" r="6" fill="#102030"/>
+<!-- Mechanical stops arcs -->
+<path d="M251 136 A44 44 0 0 0 251 204" fill="none" stroke="#ff5050" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+<text x="230" y="172" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="8" fill="#ff5050">TOPE</text>
+<path d="M339 136 A44 44 0 0 1 339 204" fill="none" stroke="#ff5050" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+<!-- Shin segment below -->
+<rect x="265" y="214" width="60" height="100" rx="8" fill="#0a1e35" stroke="#1a4a7a" stroke-width="1.5"/>
+<rect x="295" y="214" width="20" height="100" rx="3" fill="#04233a" stroke="#4dc8ff" stroke-width="1" opacity="0.7"/>
+<!-- Angle arc showing range -->
+<path d="M295 170 L295 130" stroke="#4dc8ff" stroke-width="1.5" opacity="0.4"/>
+<path d="M295 170 L330 205" stroke="#4dc8ff" stroke-width="1.5" opacity="0.4"/>
+<path d="M295 145 Q315 148 318 168" fill="none" stroke="#4dc8ff" stroke-width="1" opacity="0.7"/>
+<text x="335" y="158" font-family="'Share Tech Mono',monospace" font-size="10" fill="#4dc8ff">0-120°</text>
+<!-- Labels -->
+<line x1="251" y1="148" x2="120" y2="100" stroke="rgba(77,200,255,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="114" y="88" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="13" fill="#4dc8ff">Eje de pivote</text>
+<text x="114" y="104" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Acero inoxidable</text>
+<line x1="339" y1="148" x2="480" y2="80" stroke="rgba(77,200,255,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="488" y="68" font-family="'Share Tech Mono',monospace" font-size="13" fill="#4dc8ff">Tope de rango</text>
+<text x="488" y="84" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Máx 120° — evita hiperextensión</text>
+<line x1="265" y1="170" x2="100" y2="200" stroke="rgba(77,200,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="94" y="188" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Articulación interior</text>
+<text x="94" y="204" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Aluminio + rodamiento</text>
+<line x1="307" y1="214" x2="480" y2="260" stroke="rgba(77,200,255,0.3)" stroke-width="1" marker-end="url(#a)"/>
+<text x="488" y="248" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Segmento pierna</text>
+<text x="488" y="264" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Actuado por cil. muslo</text>
+<text x="320" y="375" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">1 grado de libertad — el cilindro neumático del muslo mueve esta articulación</text>
+</svg>`,
+
+tobillo: `<svg viewBox="0 0 640 400" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Shin segment above -->
+<rect x="258" y="30" width="56" height="80" rx="7" fill="#0a1e35" stroke="#1a4a7a" stroke-width="1.5"/>
+<!-- Ankle joint -->
+<circle cx="286" cy="150" r="38" fill="#081828" stroke="#2a6aaa" stroke-width="2.5"/>
+<circle cx="286" cy="150" r="25" fill="#060e18" stroke="#3a7aaa" stroke-width="1.8"/>
+<circle cx="286" cy="150" r="10" fill="#0a1828" stroke="#4a8aba" stroke-width="1.2"/>
+<!-- Spring inside (passive) -->
+<path d="M279 140 Q283 135 286 140 Q289 145 293 140 Q289 145 286 140" fill="none" stroke="#4dc8ff" stroke-width="1.5" opacity="0.6"/>
+<!-- Foot plate horizontal -->
+<rect x="160" y="188" width="260" height="32" rx="10" fill="#040c1a" stroke="#1a3a5c" stroke-width="1.5"/>
+<!-- Plantar flexion arrows -->
+<path d="M160 204 Q140 200 138 180" fill="none" stroke="#4dc8ff" stroke-width="1.5" marker-end="url(#a)" opacity="0.6"/>
+<text x="126" y="172" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="9" fill="#4dc8ff">+20° plantar</text>
+<path d="M420 204 Q440 200 442 180" fill="none" stroke="#4dc8ff" stroke-width="1.5" marker-end="url(#a)" opacity="0.6"/>
+<text x="450" y="172" font-family="'Share Tech Mono',monospace" font-size="9" fill="#4dc8ff">-20° dorsal</text>
+<!-- Labels -->
+<line x1="248" y1="128" x2="120" y2="80" stroke="rgba(77,200,255,0.5)" stroke-width="1" marker-end="url(#a)"/>
+<text x="114" y="68" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="13" fill="#4dc8ff">Articulación tobillo</text>
+<text x="114" y="84" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Eje de flexión pasivo</text>
+<line x1="286" y1="140" x2="460" y2="80" stroke="rgba(77,200,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="468" y="68" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Resorte de retorno</text>
+<text x="468" y="84" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Lleva pie a posición neutra</text>
+<line x1="286" y1="188" x2="460" y2="260" stroke="rgba(77,200,255,0.3)" stroke-width="1" marker-end="url(#a)"/>
+<text x="468" y="248" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Placa de pie</text>
+<text x="468" y="264" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Integra sensores FSR</text>
+<text x="320" y="370" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Tipo pasivo (resorte) — absorbe impactos y adapta a superficie irregular</text>
+</svg>`,
+
+regulador: `<svg viewBox="0 0 640 400" xmlns="http://www.w3.org/2000/svg" style="max-height:calc(100vh - 140px);width:100%;max-width:640px">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<!-- Regulator body -->
+<circle cx="280" cy="180" r="70" fill="#061828" stroke="#2a7aaa" stroke-width="2.5"/>
+<circle cx="280" cy="180" r="52" fill="#081a2a" stroke="#3a8aba" stroke-width="2"/>
+<circle cx="280" cy="180" r="28" fill="#103040" stroke="#4a9aca" stroke-width="1.5"/>
+<!-- Gauge markings -->
+<line x1="280" y1="128" x2="280" y2="138" stroke="#3a8aba" stroke-width="1.5"/>
+<line x1="232" y1="155" x2="240" y2="161" stroke="#3a8aba" stroke-width="1.5"/>
+<line x1="328" y1="155" x2="320" y2="161" stroke="#3a8aba" stroke-width="1.5"/>
+<line x1="214" y1="196" x2="223" y2="196" stroke="#3a8aba" stroke-width="1.5"/>
+<line x1="346" y1="196" x2="337" y2="196" stroke="#3a8aba" stroke-width="1.5"/>
+<!-- Needle (pointing to safe zone) -->
+<line x1="280" y1="180" x2="254" y2="145" stroke="#ffcc00" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="280" cy="180" r="5" fill="#ffcc00"/>
+<!-- Pressure zones on dial -->
+<path d="M228 235 A52 52 0 0 1 228 125" fill="none" stroke="#ff5050" stroke-width="4" opacity="0.25" stroke-linecap="round"/>
+<path d="M280 128 A52 52 0 0 1 332 235" fill="none" stroke="#3dffa0" stroke-width="4" opacity="0.2" stroke-linecap="round"/>
+<!-- Hose in (high pressure from tank) -->
+<path d="M100 180 Q180 180 210 180" fill="none" stroke="#4dc8ff" stroke-width="3" stroke-dasharray="6,3" marker-end="url(#a)" class="flow-line"/>
+<!-- Hose out (regulated low pressure) -->
+<path d="M350 180 Q430 180 510 180" fill="none" stroke="#3dffa0" stroke-width="3" stroke-dasharray="6,3" marker-end="url(#a)" class="flow-line" style="animation-delay:-0.6s"/>
+<!-- Pressure labels on hoses -->
+<rect x="80" y="158" width="80" height="24" rx="4" fill="rgba(255,80,80,0.1)" stroke="rgba(255,80,80,0.3)" stroke-width="1"/>
+<text x="120" y="172" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#ff8080" dominant-baseline="middle">200-300 bar</text>
+<rect x="468" y="158" width="76" height="24" rx="4" fill="rgba(61,255,160,0.1)" stroke="rgba(61,255,160,0.3)" stroke-width="1"/>
+<text x="506" y="172" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3dffa0" dominant-baseline="middle">4-8 bar</text>
+<!-- Adjustment knob top -->
+<rect x="258" y="98" width="44" height="24" rx="6" fill="#0a2a40" stroke="#3a8aba" stroke-width="1.5"/>
+<text x="280" y="113" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#3a8aba" dominant-baseline="middle">AJUSTE</text>
+<!-- Relief valve top -->
+<rect x="258" y="54" width="44" height="18" rx="4" fill="#1a0404" stroke="#aa2020" stroke-width="1.2"/>
+<text x="280" y="64" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#ff5050" dominant-baseline="middle">V. ALIVIO</text>
+<!-- Labels -->
+<line x1="248" y1="112" x2="140" y2="60" stroke="rgba(77,200,255,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="134" y="48" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="12" fill="#4dc8ff">Manómetro + aguja</text>
+<text x="134" y="63" text-anchor="end" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Lectura de presión actual</text>
+<line x1="280" y1="72" x2="400" y2="40" stroke="rgba(255,80,80,0.4)" stroke-width="1" marker-end="url(#a)"/>
+<text x="408" y="28" font-family="'Share Tech Mono',monospace" font-size="12" fill="#ff5050">Válvula de alivio</text>
+<text x="408" y="44" font-family="'Share Tech Mono',monospace" font-size="10" fill="#8a3030">Libera exceso automáticamente</text>
+<text x="320" y="380" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#3a6080">Sin regulador: presión incontrolable → daño en cilindros y riesgo para el usuario</text>
+</svg>`
+
+};
+
+// ===== PART INFO MAP =====
+const INFO = {
+  pelvis:      {title:'CINTURÓN PÉLVICO',    tag:'// Estructura · Soporte',              color:'var(--accent2)', info:'pelvis'},
+  tanque:      {title:'TANQUE CO₂',           tag:'// Fuente neumática primaria',         color:'#8080ff',         info:'tanque'},
+  regulador:   {title:'REGULADOR DE PRESIÓN', tag:'// Control neumático · 200→8 bar',    color:'var(--accent)',   info:'regulador'},
+  valvulas:    {title:'ELECTROVÁLVULAS',       tag:'// Control neumático · 5/2 vías',     color:'var(--accent2)', info:'valvulas'},
+  cilindro:    {title:'CILINDROS DOBLE EFECTO',tag:'// Actuador principal neumático',    color:'var(--accent)',   info:'cilindro'},
+  rodilla:     {title:'ARTICULACIÓN RODILLA', tag:'// Junta mecánica · 0-120°',          color:'var(--accent)',   info:'rodilla'},
+  tobillo:     {title:'ARTICULACIÓN TOBILLO', tag:'// Pasiva · Resorte de retorno',      color:'var(--accent)',   info:'tobillo'},
+  pie:         {title:'PIE + SENSORES FSR',   tag:'// Detección contacto con suelo',     color:'var(--accent3)', info:'pie'},
+  imu:         {title:'IMU / INCLINÓMETRO',   tag:'// Detección intención de movimiento',color:'#9050ff',         info:'imu'},
+  sonar:       {title:'SENSOR ULTRASÓNICO',   tag:'// Escalones y desniveles',           color:'var(--accent3)', info:'sonar'},
+  controlador: {title:'ARDUINO (CONTROLADOR)',tag:'// Algoritmo ciclo de marcha',        color:'var(--accent2)', info:'controlador'},
+  panico:      {title:'BOTÓN DE PÁNICO',      tag:'// Seguridad crítica · ISO 13482',    color:'var(--danger)',   info:'panico'},
+};
+
+let currentPart = null;
+
+function zoom(partId) {
+  currentPart = partId;
+  const meta = INFO[partId];
+
+  // Update panel title
+  document.getElementById('panel-title').textContent = meta.title;
+  const tagEl = document.getElementById('panel-tag');
+  tagEl.textContent = meta.tag;
+  tagEl.style.color = meta.color;
+
+  // Hide default, show info block
+  document.getElementById('def-panel').style.display = 'none';
+  document.querySelectorAll('.info-block').forEach(b => b.classList.remove('active'));
+  const block = document.getElementById('info-' + meta.info);
+  if (block) block.classList.add('active');
+
+  // Show back button
+  document.getElementById('back-btn').classList.add('show');
+
+  // Load detail SVG if available
+  const detailSVG = DETAILS[partId];
+  const detailView = document.getElementById('detail-view');
+  const wrap = document.getElementById('detail-svg-wrap');
+
+  // Fade out main SVG
+  document.getElementById('main-svg').style.opacity = '0';
+  document.getElementById('main-svg').style.transform = 'scale(0.88)';
+
+  if (detailSVG) {
+    wrap.innerHTML = detailSVG;
+    // Small delay then fade in
+    setTimeout(() => {
+      detailView.classList.add('active');
+    }, 100);
+  } else {
+    setTimeout(() => {
+      detailView.classList.add('active');
+    }, 100);
+  }
+}
+
+function goBack() {
+  currentPart = null;
+
+  // Reset panel
+  document.getElementById('panel-title').textContent = 'SISTEMA NEUMÁTICO COMPLETO';
+  document.getElementById('panel-tag').textContent = 'Seleccioná una parte para ver el detalle';
+  document.getElementById('panel-tag').style.color = 'var(--dim)';
+  document.getElementById('def-panel').style.display = 'flex';
+  document.querySelectorAll('.info-block').forEach(b => b.classList.remove('active'));
+  document.getElementById('back-btn').classList.remove('show');
+
+  // Fade out detail, bring back main SVG
+  document.getElementById('detail-view').classList.remove('active');
+  setTimeout(() => {
+    document.getElementById('main-svg').style.opacity = '1';
+    document.getElementById('main-svg').style.transform = 'scale(1)';
+    document.getElementById('detail-svg-wrap').innerHTML = '';
+  }, 300);
+}
+</script>
+</body>
+</html>
